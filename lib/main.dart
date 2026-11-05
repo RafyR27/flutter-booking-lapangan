@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/auth_screen.dart';
+import 'screens/home_screen.dart';
 import 'theme/app_colors.dart';
 
 void main() {
@@ -23,7 +24,14 @@ class BookingLapanganApp extends StatelessWidget {
         ),
         fontFamily: 'Segoe UI', // Standard crisp clean sans font
       ),
-      home: const AuthScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => AuthScreen(
+              onLoginSuccess: () =>
+                  Navigator.of(context).pushNamed('/home'),
+            ),
+        '/home': (context) => const HomeScreen(),
+      },
     );
   }
 }

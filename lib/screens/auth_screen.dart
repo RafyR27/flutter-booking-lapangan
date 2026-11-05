@@ -4,10 +4,12 @@ import 'register_view.dart';
 
 class AuthScreen extends StatefulWidget {
   final int initialTab; // 0 for Masuk, 1 for Daftar
+  final VoidCallback? onLoginSuccess;
 
   const AuthScreen({
     super.key,
     this.initialTab = 1, // Default to Daftar or Masuk
+    this.onLoginSuccess,
   });
 
   @override
@@ -31,6 +33,12 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  void _handleLogin() {
+    if (widget.onLoginSuccess != null) {
+      widget.onLoginSuccess!();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,6 +53,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ? LoginView(
                   key: const ValueKey('login_view'),
                   onTabChanged: _onTabChanged,
+                  onSubmit: _handleLogin,
                 )
               : RegisterView(
                   key: const ValueKey('register_view'),
