@@ -31,6 +31,14 @@ class _HomeScreenState extends State<HomeScreen> {
     'Voli',
   ];
 
+  static const Map<String, IconData> _categoryIcons = {
+    'Semua': Icons.grid_view_rounded,
+    'Futsal': Icons.sports_soccer_outlined,
+    'Badminton': Icons.sports_tennis_outlined,
+    'Basket': Icons.sports_basketball_outlined,
+    'Voli': Icons.sports_volleyball_outlined,
+  };
+
   int _selectedCategory = 0;
 
   String _greeting() {
@@ -245,7 +253,40 @@ class _HomeScreenState extends State<HomeScreen> {
               });
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          // Live Telemetry Specs Strip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceSoft,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.cardBorder),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildTelemetryItem(
+                  icon: Icons.verified_outlined,
+                  value: '5 Venue',
+                  label: 'Mitra Resmi',
+                ),
+                Container(width: 1, height: 26, color: AppColors.dividerColor),
+                _buildTelemetryItem(
+                  icon: Icons.stadium_outlined,
+                  value: '14 Court',
+                  label: 'Vinyl & Sintetis',
+                ),
+                Container(width: 1, height: 26, color: AppColors.dividerColor),
+                _buildTelemetryItem(
+                  icon: Icons.timer_outlined,
+                  value: '10 Menit',
+                  label: 'Hold Anti-Bentrok',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
 
           // Banner
           Container(
@@ -329,6 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.only(right: 10, bottom: 4),
                   child: CategoryChip(
                     label: _categories[index],
+                    icon: _categoryIcons[_categories[index]],
                     isSelected: _selectedCategory == index,
                     onTap: () {
                       setState(() {
@@ -434,6 +476,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.only(right: 8),
                   child: CategoryChip(
                     label: _categories[index],
+                    icon: _categoryIcons[_categories[index]],
                     isSelected: _selectedCategory == index,
                     onTap: () {
                       setState(() {
@@ -467,6 +510,46 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 40),
         ],
       ),
+    );
+  }
+
+  Widget _buildTelemetryItem({
+    required IconData icon,
+    required String value,
+    required String label,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: AppColors.primaryGreen,
+        ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textDark,
+              ),
+            ),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSubtitle,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

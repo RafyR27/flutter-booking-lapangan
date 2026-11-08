@@ -193,22 +193,39 @@ class FieldCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceSoft,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: AppColors.cardBorder),
                         ),
                         child: Text(
                           field.floorType,
                           style: const TextStyle(
-                            fontSize: 10.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textDark,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceSoft,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.cardBorder),
+                        ),
+                        child: Text(
+                          '${field.courts.length} Court',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSubtitle,
                           ),
                         ),
                       ),
@@ -217,14 +234,14 @@ class FieldCard extends StatelessWidget {
                         children: [
                           const Icon(
                             Icons.star_rounded,
-                            size: 15,
+                            size: 16,
                             color: Color(0xFFEAB308),
                           ),
                           const SizedBox(width: 3),
                           Text(
                             field.rating.toStringAsFixed(1),
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 12.5,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textDark,
                             ),
