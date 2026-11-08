@@ -3,45 +3,42 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:aplikasi_booking_lapangan/main.dart';
 
 void main() {
-  testWidgets('Auth screen displays and switches tabs correctly with hint texts',
+  testWidgets('Welcome screen displays carousel and navigates to Auth and Home',
       (WidgetTester tester) async {
     await tester.pumpWidget(const BookingLapanganApp());
 
-    // Initially loads Register view
+    // Initially loads WelcomeScreen
+    expect(find.text('APEX SPORT KARAWANG'), findsOneWidget);
     expect(find.text('Daftar Akun Baru'), findsOneWidget);
+    expect(find.text('Jelajahi'), findsOneWidget);
+
+    // Tap "Daftar Akun Baru" to open Register view
+    await tester.tap(find.text('Daftar Akun Baru'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lengkapi data identitas penyewa'), findsOneWidget);
     expect(find.text('NAMA LENGKAP'), findsOneWidget);
     expect(find.text('NOMOR WHATSAPP'), findsOneWidget);
     expect(find.text('ALAMAT EMAIL'), findsOneWidget);
-    expect(find.text('Masukkan Nama Lengkap'), findsOneWidget);
-    expect(find.text('Masukkan Nomor WhatsApp'), findsOneWidget);
-    expect(find.text('Masukkan Email'), findsOneWidget);
-    expect(find.text('Daftar Sekarang'), findsOneWidget);
 
     // Tap on "Masuk" tab
     await tester.tap(find.text('Masuk'));
     await tester.pumpAndSettle();
 
-    // Verify Login view is shown with hint texts
+    // Verify Login view is shown
     expect(find.text('Masuk ke Akun'), findsOneWidget);
     expect(find.text('EMAIL / WHATSAPP'), findsOneWidget);
     expect(find.text('KATA SANDI'), findsOneWidget);
-    expect(find.text('Masukkan Email'), findsOneWidget);
-    expect(find.text('Masukkan Kata Sandi'), findsOneWidget);
     expect(find.text('Ingat Sesi Saya'), findsOneWidget);
     expect(find.text('Lupa Sandi?'), findsOneWidget);
-    expect(find.text('Masuk ke Katalog Venue'), findsOneWidget);
   });
 
-  testWidgets('End-to-end navigation from Login to Home, Venue Detail, and Slot Picker',
+  testWidgets('End-to-end navigation from Welcome to Home, Venue Detail, and Slot Picker',
       (WidgetTester tester) async {
     await tester.pumpWidget(const BookingLapanganApp());
 
-    // Switch to Masuk
-    await tester.tap(find.text('Masuk'));
-    await tester.pumpAndSettle();
-
-    // Tap "Masuk ke Katalog Venue" to enter HomeScreen
-    await tester.tap(find.text('Masuk ke Katalog Venue'));
+    // Tap "Jelajahi" to enter HomeScreen directly
+    await tester.tap(find.text('Jelajahi'));
     await tester.pumpAndSettle();
 
     // Verify HomeScreen elements
@@ -65,7 +62,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.person_outlined));
     await tester.pumpAndSettle();
     expect(find.text('Profil Penyewa'), findsOneWidget);
-    expect(find.text('REKENING PENGEMBALIAN DANA (REFUND)'), findsOneWidget);
+    expect(find.text('AKUN PENGEMBALIAN DANA (REFUND)'), findsOneWidget);
 
     // Switch back to Beranda (Tab 0)
     await tester.tap(find.byIcon(Icons.home_outlined));

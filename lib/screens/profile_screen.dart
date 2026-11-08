@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/refund_account.dart';
 import '../services/favorite_service.dart';
 import '../theme/app_colors.dart';
 import 'favorites_screen.dart';
@@ -11,22 +12,14 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String _bankName = 'BCA';
+  RefundAccountType _accountType = RefundAccountType.bankTransfer;
+  String _providerName = 'Bank BCA';
   String _accountNumber = '5210 9821 4410';
   String _accountHolder = 'Muhamad Rafy Ramadhan';
 
-  final List<String> _bankOptions = const [
-    'BCA',
-    'Bank Mandiri',
-    'BRI',
-    'BNI',
-    'BSI',
-    'CIMB Niaga',
-    'Bank Permata',
-  ];
-
   void _showEditBankSheet() {
-    String selectedBank = _bankName;
+    RefundAccountType sheetType = _accountType;
+    String selectedProvider = _providerName;
     final numberController = TextEditingController(text: _accountNumber);
     final holderController = TextEditingController(text: _accountHolder);
 
@@ -40,6 +33,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (sheetCtx) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            final isBank = sheetType == RefundAccountType.bankTransfer;
+            final providerOptions = isBank
+                ? RefundProvider.bankList.map((p) => p.name).toList()
+                : RefundProvider.eWalletList.map((p) => p.name).toList();
+
+            if (!providerOptions.contains(selectedProvider)) {
+              selectedProvider = providerOptions.first;
+            }
+
             return Padding(
               padding: EdgeInsets.only(
                 left: 20,
@@ -55,7 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Ubah Rekening Refund',
+                        'Ubah Rekening / E-Wallet',
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
@@ -68,11 +70,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
 
-                  const Text(
-                    'NAMA BANK',
-                    style: TextStyle(
+                  // Segmented Type Selector (Bank vs E-Wallet)
+                  Container(
+                    height: 42,
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: AppColors.tabBackground,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setSheetState(() {
+                                sheetType = RefundAccountType.bankTransfer;
+                                selectedProvider = RefundProvider.bankList.first.name;
+                              });
+                            },
+                            child: Container(
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: isBank ? AppColors.primaryGreen : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Bank Transfer (17 Bank)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: isBank ? Colors.white : AppColors.textSubtitle,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setSheetState(() {
+                                sheetType = RefundAccountType.eWallet;
+                                selectedProvider = RefundProvider.eWalletList.first.name;
+                              });
+                            },
+                            child: Container(
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: !isBank ? AppColors.primaryGreen : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'E-Wallet (7 Dompet)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: !isBank ? Colors.white : AppColors.textSubtitle,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Provider Dropdown
+                  Text(
+                    isBank ? 'NAMA BANK TUJUAN' : 'LAYANAN E-WALLET',
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textLabel,
@@ -88,14 +157,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                        value: selectedBank,
+                        value: selectedProvider,
                         isExpanded: true,
                         icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textDark),
-                        items: _bankOptions.map((bank) {
+                        items: providerOptions.map((name) {
                           return DropdownMenuItem<String>(
-                            value: bank,
+                            value: name,
                             child: Text(
-                              bank,
+                              name,
                               style: const TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
@@ -107,7 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onChanged: (val) {
                           if (val != null) {
                             setSheetState(() {
-                              selectedBank = val;
+                              selectedProvider = val;
                             });
                           }
                         },
@@ -117,9 +186,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 16),
 
-                  const Text(
-                    'NOMOR REKENING',
-                    style: TextStyle(
+                  // Account / Phone Number
+                  Text(
+                    isBank ? 'NOMOR REKENING' : 'NOMOR HP / AKUN E-WALLET',
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textLabel,
@@ -140,19 +210,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.w600,
                         color: AppColors.textDark,
                       ),
-                      decoration: const InputDecoration(
-                        hintText: 'Contoh: 521098214410',
+                      decoration: InputDecoration(
+                        hintText: isBank ? 'Contoh: 521098214410' : 'Contoh: 081289123456',
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 16),
 
-                  const Text(
-                    'NAMA PEMILIK REKENING',
-                    style: TextStyle(
+                  // Account Holder Name
+                  Text(
+                    isBank ? 'NAMA PEMILIK REKENING' : 'NAMA AKUN TERDAFTAR',
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textLabel,
@@ -173,16 +244,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.w600,
                         color: AppColors.textDark,
                       ),
-                      decoration: const InputDecoration(
-                        hintText: 'Nama lengkap sesuai buku tabungan',
+                      decoration: InputDecoration(
+                        hintText: isBank
+                            ? 'Nama lengkap sesuai buku tabungan'
+                            : 'Nama akun sesuai profil e-wallet',
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
+                  // Save Button
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -192,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             holderController.text.trim().isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Lengkapi nomor rekening dan nama pemilik'),
+                              content: Text('Lengkapi nomor akun dan nama pemilik'),
                               backgroundColor: AppColors.statusCancelled,
                             ),
                           );
@@ -200,15 +274,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         }
 
                         setState(() {
-                          _bankName = selectedBank;
+                          _accountType = sheetType;
+                          _providerName = selectedProvider;
                           _accountNumber = numberController.text.trim();
                           _accountHolder = holderController.text.trim();
                         });
 
                         Navigator.of(sheetCtx).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Rekening pengembalian dana berhasil diperbarui'),
+                          SnackBar(
+                            content: Text(
+                              'Akun refund ($_providerName) berhasil diperbarui',
+                            ),
                             backgroundColor: AppColors.primaryGreen,
                           ),
                         );
@@ -222,7 +299,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       child: const Text(
-                        'Simpan Rekening',
+                        'Simpan Akun Refund',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -633,15 +710,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 24),
 
-            // Rekening Pencairan Refund
-            const Text(
-              'REKENING PENGEMBALIAN DANA (REFUND)',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textLabel,
-                letterSpacing: 0.6,
-              ),
+            // Rekening / E-Wallet Pencairan Refund
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'AKUN PENGEMBALIAN DANA (REFUND)',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textLabel,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _accountType == RefundAccountType.bankTransfer
+                        ? AppColors.primaryGreenLight
+                        : const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    _accountType == RefundAccountType.bankTransfer
+                        ? 'BANK TRANSFER'
+                        : 'E-WALLET',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: _accountType == RefundAccountType.bankTransfer
+                          ? AppColors.primaryGreen
+                          : const Color(0xFF2563EB),
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Container(
@@ -653,14 +757,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.account_balance_outlined, color: AppColors.textDark, size: 22),
+                  Icon(
+                    _accountType == RefundAccountType.bankTransfer
+                        ? Icons.account_balance_outlined
+                        : Icons.account_balance_wallet_outlined,
+                    color: AppColors.textDark,
+                    size: 22,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$_bankName • $_accountNumber',
+                          '$_providerName • $_accountNumber',
                           style: const TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
