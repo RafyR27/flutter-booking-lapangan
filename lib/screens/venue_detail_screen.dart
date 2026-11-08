@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/field.dart';
+import '../services/auth_service.dart';
 import '../services/favorite_service.dart';
 import '../theme/app_colors.dart';
+import 'auth_screen.dart';
 import 'slot_picker_screen.dart';
 
 class VenueDetailScreen extends StatefulWidget {
@@ -29,6 +31,109 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
 
   String _formatRupiah(int amount) {
     return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+  }
+
+  void _navigateToSlotPicker() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SlotPickerScreen(
+          field: widget.field,
+          selectedCourt: _selectedCourt,
+        ),
+      ),
+    );
+  }
+
+  void _handlePilihJadwal() {
+    if (!AuthService.instance.isLoggedIn) {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Masuk untuk Booking',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Anda sedang dalam mode pratinjau. Untuk memilih jadwal dan menyewa lapangan, silakan masuk ke akun penyewa Anda terlebih dahulu.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSubtitle,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AuthScreen(
+                              initialTab: 0,
+                              onLoginSuccess: () {
+                                AuthService.instance.login();
+                                Navigator.of(context).pop();
+                                _navigateToSlotPicker();
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Masuk ke Akun Sekarang',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+      return;
+    }
+
+    _navigateToSlotPicker();
   }
 
   @override
@@ -440,16 +545,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => SlotPickerScreen(
-                        field: widget.field,
-                        selectedCourt: _selectedCourt,
-                      ),
-                    ),
-                  );
-                },
+                onPressed: _handlePilihJadwal,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,

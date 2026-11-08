@@ -62,7 +62,8 @@ void main() {
     await tester.tap(find.byIcon(Icons.person_outlined));
     await tester.pumpAndSettle();
     expect(find.text('Profil Penyewa'), findsOneWidget);
-    expect(find.text('AKUN PENGEMBALIAN DANA (REFUND)'), findsOneWidget);
+    expect(find.text('REKENING BANK (PENGEMBALIAN DANA)'), findsOneWidget);
+    expect(find.text('AKUN E-WALLET (PENGEMBALIAN DANA)'), findsOneWidget);
 
     // Switch back to Beranda (Tab 0)
     await tester.tap(find.byIcon(Icons.home_outlined));
@@ -72,7 +73,7 @@ void main() {
     await tester.drag(find.byType(SingleChildScrollView).first, const Offset(0, -300));
     await tester.pumpAndSettle();
 
-    // Tap on first FieldCard to open VenueDetailScreen
+    // Tap on first FieldCard to open VenueDetailScreen preview
     await tester.tap(find.text('Apex Arena Futsal Karawang').first);
     await tester.pumpAndSettle();
 
@@ -80,10 +81,24 @@ void main() {
     expect(find.text('FASILITAS VENUE'), findsOneWidget);
     expect(find.text('Pilih Jadwal'), findsOneWidget);
 
-    // Tap "Pilih Jadwal" to navigate to SlotPickerScreen
+    // Tap "Pilih Jadwal" - in guest preview mode, prompts to login
     await tester.tap(find.text('Pilih Jadwal'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Masuk untuk Booking'), findsOneWidget);
+    expect(find.text('Masuk ke Akun Sekarang'), findsOneWidget);
+
+    // Tap "Masuk ke Akun Sekarang" to log in
+    await tester.tap(find.text('Masuk ke Akun Sekarang'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Masuk ke Akun'), findsOneWidget);
+
+    // Perform login
+    await tester.tap(find.text('Masuk ke Katalog Venue'));
+    await tester.pumpAndSettle();
+
+    // Now user is logged in and navigated to SlotPickerScreen!
     expect(find.text('PILIH TANGGAL'), findsOneWidget);
     expect(find.text('SLOT WAKTU TERSEDIA'), findsOneWidget);
   });

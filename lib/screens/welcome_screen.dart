@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import 'auth_screen.dart';
 import 'home_screen.dart';
@@ -100,6 +101,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         builder: (context) => AuthScreen(
           initialTab: initialTab,
           onLoginSuccess: () {
+            AuthService.instance.login();
             Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
           },
         ),
@@ -171,27 +173,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.primaryGreen,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'APEX SPORT KARAWANG',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                            ],
+                          const Text(
+                            'APEX SPORT KARAWANG',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 1.1,
+                            ),
                           ),
                           const SizedBox(height: 3),
                           Text(
@@ -205,6 +194,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ),
                       TextButton(
                         onPressed: () {
+                          AuthService.instance.setGuest();
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
                               builder: (context) => const HomeScreen(),
@@ -235,39 +225,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
                   const Spacer(),
 
-                  // Quotes & Sports Category Chamber
+                  // Quotes Chamber
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 600),
                     child: Column(
                       key: ValueKey<int>(_currentIndex),
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Category Pill
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGreen.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.primaryGreen.withValues(alpha: 0.6),
-                            ),
-                          ),
-                          child: Text(
-                            activeSlide.sportCategory,
-                            style: const TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primaryGreen,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
                         // Quote Text
                         Text(
                           '"${activeSlide.quote}"',
