@@ -4,6 +4,9 @@ import '../theme/app_colors.dart';
 import '../widgets/category_chip.dart';
 import '../widgets/custom_search_bar.dart';
 import '../widgets/field_card.dart';
+import 'history_screen.dart';
+import 'profile_screen.dart';
+import 'venue_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,51 +17,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-
   final String _userName = 'Rafy Ramadhan';
+  String _searchQuery = '';
 
-  final List<Field> _fields = const [
-    Field(
-      id: 'f1',
-      name: 'Lapangan Futsal A',
-      sportType: 'Futsal',
-      location: 'Mall XP, Karawang',
-      pricePerHour: 150000,
-      rating: 4.8,
-    ),
-    Field(
-      id: 'f2',
-      name: 'Lapangan Badminton Indoor',
-      sportType: 'Badminton',
-      location: 'Jl. Sudirman, Karawang',
-      pricePerHour: 100000,
-      rating: 4.6,
-    ),
-    Field(
-      id: 'f3',
-      name: 'Lapangan Basket Kelapa Gading',
-      sportType: 'Basket',
-      location: 'Jl. Kelapa Gading, Karawang',
-      pricePerHour: 120000,
-      rating: 4.7,
-    ),
-    Field(
-      id: 'f4',
-      name: 'Lapangan Futsal B',
-      sportType: 'Futsal',
-      location: 'Taman Ria Indah, Karawang',
-      pricePerHour: 140000,
-      rating: 4.5,
-    ),
-    Field(
-      id: 'f5',
-      name: 'Lapangan Badminton Outdoor',
-      sportType: 'Badminton',
-      location: 'Pondok Indah, Karawang',
-      pricePerHour: 90000,
-      rating: 4.3,
-    ),
-  ];
+  final List<Field> _fields = Field.sampleList;
 
   final List<String> _categories = const [
     'Semua',
@@ -83,12 +45,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Field> _filteredFields() {
-    if (_selectedCategory == 0) {
-      return _fields;
+    List<Field> list = _fields;
+    if (_selectedCategory != 0) {
+      list = list
+          .where((f) => f.sportType == _categories[_selectedCategory])
+          .toList();
     }
-    return _fields
-        .where((f) => f.sportType == _categories[_selectedCategory])
-        .toList();
+    if (_searchQuery.trim().isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      list = list
+          .where((f) =>
+              f.name.toLowerCase().contains(q) ||
+              f.location.toLowerCase().contains(q) ||
+              f.sportType.toLowerCase().contains(q) ||
+              f.floorType.toLowerCase().contains(q))
+          .toList();
+    }
+    return list;
   }
 
   void _onBottomNavTapped(int index) {
@@ -97,15 +70,23 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _openVenueDetail(Field field) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => VenueDetailScreen(field: field),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final visibleFields = _filteredFields();
 
     final List<Widget> pages = [
       _buildHomeContent(visibleFields),
-      const Center(child: Text('Halaman Booking')),
-      const Center(child: Text('Halaman Riwayat')),
-      const Center(child: Text('Halaman Profile')),
+      _buildBookingCatalogView(visibleFields),
+      const HistoryScreen(),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
@@ -190,24 +171,38 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppColors.tabBackground,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.notifications_none,
-                      color: AppColors.textDark,
-                      size: 20,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(
+                        Icons.notifications_none,
+                        color: AppColors.textDark,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Belum ada notifikasi baru'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 20,
+                  InkWell(
+                    onTap: () => _onBottomNavTapped(3), // Jump to Profile
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
@@ -217,10 +212,14 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 24),
 
           // Search bar
-                      CustomSearchBar(
-                        hintText: 'Cari lapangan olahraga...',
-                        onChanged: (value) {},
-                      ),
+          CustomSearchBar(
+            hintText: 'Cari lapangan olahraga di Karawang...',
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+          ),
           const SizedBox(height: 24),
 
           // Banner
@@ -267,18 +266,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Container(
-                                width: 70,
-                                height: 70,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: const Icon(
-                                  Icons.local_activity,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                              ),
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.local_activity_outlined,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -302,8 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: _categories.length,
               itemBuilder: (context, index) {
                 return Padding(
-                  padding:
-                      const EdgeInsets.only(right: 10, bottom: 4),
+                  padding: const EdgeInsets.only(right: 10, bottom: 4),
                   child: CategoryChip(
                     label: _categories[index],
                     isSelected: _selectedCategory == index,
@@ -320,28 +318,128 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 24),
 
           // Daftar lapangan
-          const Text(
-            'Lapangan Populer',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textDark,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Lapangan Populer',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
+                ),
+              ),
+              Text(
+                '${fields.length} Venue',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSubtitle,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          ...fields.map(
-            (field) => FieldCard(
-              field: field,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Detail ${field.name}'),
+          if (fields.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              alignment: Alignment.center,
+              child: const Text(
+                'Tidak ada lapangan yang sesuai dengan pencarian.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSubtitle),
+              ),
+            )
+          else
+            ...fields.map(
+              (field) => FieldCard(
+                field: field,
+                onTap: () => _openVenueDetail(field),
+              ),
+            ),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookingCatalogView(List<Field> fields) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Katalog & Booking Venue',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textDark,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Pilih lapangan berstandar kompetisi di Karawang',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.textSubtitle,
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Search bar
+          CustomSearchBar(
+            hintText: 'Cari nama venue atau jenis lantai...',
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Kategori chips
+          SizedBox(
+            height: 40,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: CategoryChip(
+                    label: _categories[index],
+                    isSelected: _selectedCategory == index,
+                    onTap: () {
+                      setState(() {
+                        _selectedCategory = index;
+                      });
+                    },
                   ),
                 );
               },
             ),
           ),
-          const SizedBox(height: 80),
+          const SizedBox(height: 20),
+
+          // Fields list
+          if (fields.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              alignment: Alignment.center,
+              child: const Text(
+                'Tidak ditemukan lapangan olahraga yang cocok.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSubtitle),
+              ),
+            )
+          else
+            ...fields.map(
+              (field) => FieldCard(
+                field: field,
+                onTap: () => _openVenueDetail(field),
+              ),
+            ),
+          const SizedBox(height: 40),
         ],
       ),
     );

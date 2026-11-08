@@ -12,6 +12,10 @@ class FieldCard extends StatelessWidget {
     required this.onTap,
   });
 
+  String _formatRupiah(int amount) {
+    return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -21,10 +25,11 @@ class FieldCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardBorder),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -33,21 +38,21 @@ class FieldCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image placeholder
+            // Venue Preview Arena
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(18),
+                top: Radius.circular(16),
               ),
               child: SizedBox(
-                height: 150,
+                height: 140,
                 width: double.infinity,
                 child: field.imageUrl != null
                     ? Image.network(
                         field.imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => _buildPlaceholder(),
+                        errorBuilder: (_, _, _) => _buildArenaBanner(),
                       )
-                    : _buildPlaceholder(),
+                    : _buildArenaBanner(),
               ),
             ),
             Padding(
@@ -64,7 +69,7 @@ class FieldCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 15.5,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textDark,
                           ),
@@ -76,11 +81,11 @@ class FieldCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          color: AppColors.primaryGreenLight,
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          'RP ${field.pricePerHour.toStringAsFixed(0)}/jam',
+                          '${_formatRupiah(field.pricePerHour)}/jam',
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -94,17 +99,17 @@ class FieldCard extends StatelessWidget {
                   Row(
                     children: [
                       const Icon(
-                        Icons.location_on,
+                        Icons.location_on_outlined,
                         size: 14,
                         color: AppColors.textSubtitle,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           field.location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textSubtitle,
                           ),
@@ -112,42 +117,81 @@ class FieldCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.sports,
-                        size: 14,
-                        color: AppColors.textSubtitle,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        field.sportType,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSubtitle,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceSoft,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.cardBorder),
                         ),
+                        child: Text(
+                          field.floorType,
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 15,
+                            color: Color(0xFFEAB308),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            field.rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
+            const Divider(color: AppColors.dividerColor, height: 1),
             SizedBox(
-              height: 44,
+              height: 42,
               child: Row(
                 children: [
                   Expanded(
                     child: TextButton(
                       onPressed: onTap,
-                      child: const Text(
-                        'Lihat Detail',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryGreen,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primaryGreen,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(16),
+                          ),
                         ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Text(
+                            'Pilih Jadwal & Detail Venue',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 16,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -160,15 +204,60 @@ class FieldCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildArenaBanner() {
     return Container(
-      color: AppColors.tabBackground,
-      alignment: Alignment.center,
-      child: const Icon(
-        Icons.sports_outlined,
-        size: 44,
-        color: AppColors.textSubtitle,
+      color: const Color(0xFF1E2833),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _CardPitchPainter(),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            bottom: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                field.sportType.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _CardPitchPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final rect = Rect.fromLTWH(12, 12, size.width - 24, size.height - 24);
+    canvas.drawRect(rect, paint);
+    canvas.drawLine(
+      Offset(size.width / 2, 12),
+      Offset(size.width / 2, size.height - 12),
+      paint,
+    );
+    canvas.drawCircle(Offset(size.width / 2, size.height / 2), 24, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
