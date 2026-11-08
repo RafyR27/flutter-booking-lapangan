@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/field.dart';
+import '../services/favorite_service.dart';
 import '../theme/app_colors.dart';
 
 class FieldCard extends StatelessWidget {
@@ -46,13 +47,88 @@ class FieldCard extends StatelessWidget {
               child: SizedBox(
                 height: 140,
                 width: double.infinity,
-                child: field.imageUrl != null
-                    ? Image.network(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (field.imageUrl != null)
+                      Image.network(
                         field.imageUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => _buildArenaBanner(),
                       )
-                    : _buildArenaBanner(),
+                    else
+                      _buildArenaBanner(),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.55),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 12,
+                      bottom: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          field.sportType.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: ValueListenableBuilder<Set<String>>(
+                        valueListenable: FavoriteService.instance.favoriteIdsNotifier,
+                        builder: (context, favIds, _) {
+                          final isFav = favIds.contains(field.id);
+                          return InkWell(
+                            onTap: () {
+                              FavoriteService.instance.toggleFavorite(field.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(isFav
+                                      ? 'Dihapus dari daftar favorit'
+                                      : 'Disimpan ke daftar favorit'),
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isFav ? Icons.bookmark : Icons.bookmark_border_rounded,
+                                size: 16,
+                                color: isFav ? AppColors.primaryGreen : Colors.white,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             Padding(

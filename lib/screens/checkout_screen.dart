@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/booking.dart';
 import '../models/field.dart';
 import '../services/booking_service.dart';
@@ -30,6 +32,8 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   String _selectedPaymentMethod = 'BCA';
   String? _uploadedReceiptName;
+  File? _receiptImageFile;
+  final ImagePicker _picker = ImagePicker();
   bool _agreedToTerms = true;
   bool _isSubmitting = false;
 
@@ -51,15 +55,138 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  void _simulateUploadReceipt() {
-    setState(() {
-      _uploadedReceiptName = 'bukti_transfer_${_selectedPaymentMethod.toLowerCase()}_${DateTime.now().millisecondsSinceEpoch % 10000}.jpg';
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Foto bukti pembayaran berhasil dipilih'),
-        duration: Duration(seconds: 1),
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
+      );
+      if (picked != null) {
+        setState(() {
+          _receiptImageFile = File(picked.path);
+          _uploadedReceiptName = picked.name;
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Foto bukti transfer dipilih: ${picked.name}'),
+            backgroundColor: AppColors.primaryGreen,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengambil gambar: $e'),
+          backgroundColor: AppColors.statusCancelled,
+        ),
+      );
+    }
+  }
+
+  void _showImageSourcePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (sheetCtx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Pilih Bukti Pembayaran',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.of(sheetCtx).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_outlined,
+                      color: AppColors.primaryGreen,
+                      size: 22,
+                    ),
+                  ),
+                  title: const Text(
+                    'Ambil Foto Langsung (Kamera)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Foto langsung struk ATM atau bukti transfer',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSubtitle),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetCtx).pop();
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                const Divider(color: AppColors.dividerColor, height: 1),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.photo_library_outlined,
+                      color: AppColors.primaryGreen,
+                      size: 22,
+                    ),
+                  ),
+                  title: const Text(
+                    'Pilih dari Galeri Foto',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Pilih screenshot m-Banking atau file gambar',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSubtitle),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetCtx).pop();
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -430,10 +557,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             if (_uploadedReceiptName == null)
               InkWell(
-                onTap: _simulateUploadReceipt,
+                onTap: _showImageSourcePicker,
                 borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  height: 110,
+                  height: 120,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: AppColors.surfaceSoft,
@@ -445,19 +572,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(
-                        Icons.cloud_upload_outlined,
-                        size: 32,
-                        color: AppColors.primaryGreen,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(
+                            Icons.camera_alt_outlined,
+                            size: 26,
+                            color: AppColors.primaryGreen,
+                          ),
+                          SizedBox(width: 14),
+                          Icon(
+                            Icons.photo_library_outlined,
+                            size: 26,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Pilih Foto Struk / Bukti Transfer',
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Ambil Foto Kamera / Pilih dari Galeri',
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Ketuk di sini untuk memilih foto struk transfer',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textSubtitle,
                         ),
                       ),
                     ],
@@ -466,19 +612,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               )
             else
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.primaryGreenLight,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.primaryGreen),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.receipt_long_rounded,
-                      color: AppColors.primaryGreen,
-                      size: 28,
-                    ),
+                    if (_receiptImageFile != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          _receiptImageFile!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    else
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.receipt_long_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 30,
+                        ),
+                      ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -486,6 +651,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         children: [
                           Text(
                             _uploadedReceiptName!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -498,7 +665,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             style: TextStyle(
                               fontSize: 11,
                               color: AppColors.primaryGreen,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          InkWell(
+                            onTap: _showImageSourcePicker,
+                            child: const Text(
+                              'Ganti Foto Bukti',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
+                                decoration: TextDecoration.underline,
+                              ),
                             ),
                           ),
                         ],
@@ -509,6 +689,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       onPressed: () {
                         setState(() {
                           _uploadedReceiptName = null;
+                          _receiptImageFile = null;
                         });
                       },
                     ),

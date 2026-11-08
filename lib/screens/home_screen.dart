@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../widgets/category_chip.dart';
 import '../widgets/custom_search_bar.dart';
 import '../widgets/field_card.dart';
+import 'favorites_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
 import 'venue_detail_screen.dart';
@@ -174,6 +175,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: IconButton(
                       padding: EdgeInsets.zero,
                       icon: const Icon(
+                        Icons.bookmark_outline_rounded,
+                        color: AppColors.textDark,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const FavoritesScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.tabBackground,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(
                         Icons.notifications_none,
                         color: AppColors.textDark,
                         size: 20,
@@ -188,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   InkWell(
                     onTap: () => _onBottomNavTapped(3), // Jump to Profile
                     child: Container(

@@ -46,6 +46,8 @@ class Field {
       location: 'Telukjambe Timur, Karawang',
       pricePerHour: 150000,
       rating: 4.8,
+      imageUrl:
+          'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80',
       openHours: '07:00 - 23:00',
       floorType: 'Taraflex Polyurethane Vinyl 7mm',
       dimension: '25 x 15 Meter (Standar FIFA)',
@@ -70,6 +72,8 @@ class Field {
       location: 'Pusat Kota, Karawang',
       pricePerHour: 90000,
       rating: 4.7,
+      imageUrl:
+          'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80',
       openHours: '08:00 - 23:00',
       floorType: 'Karpet Vinyl Standar BWF 5mm',
       dimension: '13.4 x 6.1 Meter (Standar BWF)',
@@ -93,6 +97,8 @@ class Field {
       location: 'Klari, Karawang',
       pricePerHour: 125000,
       rating: 4.6,
+      imageUrl:
+          'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=80',
       openHours: '07:00 - 22:00',
       floorType: 'Parquet Kayu Solid Maple',
       dimension: '28 x 15 Meter (Standar FIBA)',
@@ -116,6 +122,8 @@ class Field {
       location: 'Telukjambe Barat, Karawang',
       pricePerHour: 175000,
       rating: 4.9,
+      imageUrl:
+          'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=800&q=80',
       openHours: '06:00 - 24:00',
       floorType: 'Rumput Sintetis Monofilament 50mm',
       dimension: '40 x 20 Meter',
@@ -139,6 +147,8 @@ class Field {
       location: 'Cikampek, Karawang',
       pricePerHour: 80000,
       rating: 4.5,
+      imageUrl:
+          'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?auto=format&fit=crop&w=800&q=80',
       openHours: '08:00 - 22:00',
       floorType: 'Interlocking Modular Polypropylene',
       dimension: '18 x 9 Meter (Standar FIVB)',

@@ -1,8 +1,449 @@
 import 'package:flutter/material.dart';
+import '../services/favorite_service.dart';
 import '../theme/app_colors.dart';
+import 'favorites_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String _bankName = 'BCA';
+  String _accountNumber = '5210 9821 4410';
+  String _accountHolder = 'Muhamad Rafy Ramadhan';
+
+  final List<String> _bankOptions = const [
+    'BCA',
+    'Bank Mandiri',
+    'BRI',
+    'BNI',
+    'BSI',
+    'CIMB Niaga',
+    'Bank Permata',
+  ];
+
+  void _showEditBankSheet() {
+    String selectedBank = _bankName;
+    final numberController = TextEditingController(text: _accountNumber);
+    final holderController = TextEditingController(text: _accountHolder);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Ubah Rekening Refund',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: () => Navigator.of(sheetCtx).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  const Text(
+                    'NAMA BANK',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textLabel,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.inputBackground,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedBank,
+                        isExpanded: true,
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textDark),
+                        items: _bankOptions.map((bank) {
+                          return DropdownMenuItem<String>(
+                            value: bank,
+                            child: Text(
+                              bank,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setSheetState(() {
+                              selectedBank = val;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  const Text(
+                    'NOMOR REKENING',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textLabel,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.inputBackground,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      controller: numberController,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textDark,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: 'Contoh: 521098214410',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  const Text(
+                    'NAMA PEMILIK REKENING',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textLabel,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.inputBackground,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      controller: holderController,
+                      textCapitalization: TextCapitalization.words,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textDark,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: 'Nama lengkap sesuai buku tabungan',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (numberController.text.trim().isEmpty ||
+                            holderController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Lengkapi nomor rekening dan nama pemilik'),
+                              backgroundColor: AppColors.statusCancelled,
+                            ),
+                          );
+                          return;
+                        }
+
+                        setState(() {
+                          _bankName = selectedBank;
+                          _accountNumber = numberController.text.trim();
+                          _accountHolder = holderController.text.trim();
+                        });
+
+                        Navigator.of(sheetCtx).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Rekening pengembalian dana berhasil diperbarui'),
+                            backgroundColor: AppColors.primaryGreen,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Simpan Rekening',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showChangePasswordSheet() {
+    final oldPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool obscureOld = true;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Ganti Kata Sandi',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: () => Navigator.of(sheetCtx).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  _buildPasswordField(
+                    label: 'KATA SANDI SAAT INI',
+                    controller: oldPasswordController,
+                    obscureText: obscureOld,
+                    onToggleObscure: () {
+                      setSheetState(() {
+                        obscureOld = !obscureOld;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
+                  _buildPasswordField(
+                    label: 'KATA SANDI BARU',
+                    controller: newPasswordController,
+                    obscureText: obscureNew,
+                    onToggleObscure: () {
+                      setSheetState(() {
+                        obscureNew = !obscureNew;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
+                  _buildPasswordField(
+                    label: 'KONFIRMASI KATA SANDI BARU',
+                    controller: confirmPasswordController,
+                    obscureText: obscureConfirm,
+                    onToggleObscure: () {
+                      setSheetState(() {
+                        obscureConfirm = !obscureConfirm;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (oldPasswordController.text.isEmpty ||
+                            newPasswordController.text.isEmpty ||
+                            confirmPasswordController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Semua kolom kata sandi wajib diisi'),
+                              backgroundColor: AppColors.statusCancelled,
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (newPasswordController.text.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Kata sandi baru minimal 6 karakter'),
+                              backgroundColor: AppColors.statusCancelled,
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (newPasswordController.text !=
+                            confirmPasswordController.text) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Konfirmasi kata sandi baru tidak cocok'),
+                              backgroundColor: AppColors.statusCancelled,
+                            ),
+                          );
+                          return;
+                        }
+
+                        Navigator.of(sheetCtx).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Kata sandi berhasil diperbarui'),
+                            backgroundColor: AppColors.primaryGreen,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Perbarui Kata Sandi',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPasswordField({
+    required String label,
+    required TextEditingController controller,
+    required bool obscureText,
+    required VoidCallback onToggleObscure,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textLabel,
+            letterSpacing: 0.6,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.inputBackground,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: TextField(
+            controller: controller,
+            obscureText: obscureText,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textDark,
+            ),
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: AppColors.textLabel,
+                  size: 20,
+                ),
+                onPressed: onToggleObscure,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   void _showPolicyDialog(BuildContext context) {
     showDialog(
@@ -217,19 +658,19 @@ class ProfileScreen extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          'BCA • 5210 9821 4410',
-                          style: TextStyle(
+                          '$_bankName • $_accountNumber',
+                          style: const TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textDark,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          'a.n. Muhamad Rafy Ramadhan',
-                          style: TextStyle(
+                          'a.n. $_accountHolder',
+                          style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textSubtitle,
                           ),
@@ -238,12 +679,8 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Menu ubah rekening refund')),
-                      );
-                    },
-                    child: const Text('Ubah', style: TextStyle(color: AppColors.primaryGreen)),
+                    onPressed: _showEditBankSheet,
+                    child: const Text('Ubah', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),
@@ -253,7 +690,7 @@ class ProfileScreen extends StatelessWidget {
 
             // Menu Pengaturan & Legal
             const Text(
-              'INFORMASI & KEBIJAKAN',
+              'MENU & LAYANAN',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -273,6 +710,30 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
+                    ValueListenableBuilder<Set<String>>(
+                      valueListenable: FavoriteService.instance.favoriteIdsNotifier,
+                      builder: (context, favIds, _) {
+                        return _buildMenuItem(
+                          icon: Icons.bookmark_outline_rounded,
+                          title: 'Lapangan Favorit Tersimpan',
+                          trailingBadge: '${favIds.length} Venue',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const FavoritesScreen(),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    const Divider(color: AppColors.dividerColor, height: 1),
+                    _buildMenuItem(
+                      icon: Icons.lock_outline_rounded,
+                      title: 'Ganti Kata Sandi',
+                      onTap: _showChangePasswordSheet,
+                    ),
+                    const Divider(color: AppColors.dividerColor, height: 1),
                     _buildMenuItem(
                       icon: Icons.policy_outlined,
                       title: 'Kebijakan Pembatalan D-1 & S&K',
@@ -285,16 +746,6 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Hubungi admin WhatsApp: +62 812-8912-3456')),
-                        );
-                      },
-                    ),
-                    const Divider(color: AppColors.dividerColor, height: 1),
-                    _buildMenuItem(
-                      icon: Icons.lock_outline_rounded,
-                      title: 'Ganti Kata Sandi',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Menu ubah kata sandi')),
                         );
                       },
                     ),
@@ -344,6 +795,7 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildMenuItem({
     required IconData icon,
     required String title,
+    String? trailingBadge,
     required VoidCallback onTap,
   }) {
     return ListTile(
@@ -357,10 +809,33 @@ class ProfileScreen extends StatelessWidget {
           color: AppColors.textDark,
         ),
       ),
-      trailing: const Icon(
-        Icons.chevron_right_rounded,
-        size: 20,
-        color: AppColors.textSubtitle,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (trailingBadge != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreenLight,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                trailingBadge,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+          ],
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: AppColors.textSubtitle,
+          ),
+        ],
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
     );

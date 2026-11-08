@@ -205,48 +205,147 @@ class TicketPassScreen extends StatelessWidget {
                   // Tear Notch Divider
                   _buildTicketNotch(),
 
-                  // Lower Chamber (QR Code & Check-in)
+                  // Lower Chamber (QR Code & Check-in / Pending Verification)
                   Padding(
                     padding: const EdgeInsets.all(22),
                     child: Column(
                       children: [
-                        // Vector QR Code representation
-                        Container(
-                          width: 140,
-                          height: 140,
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.cardBorder,
-                              width: 1.5,
+                        if (booking.status == BookingStatus.pendingVerification) ...[
+                          // Pending Verification: Question mark box
+                          Container(
+                            width: 140,
+                            height: 140,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.statusPendingBg,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: AppColors.statusPending.withValues(alpha: 0.3),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.help_outline_rounded,
+                                    size: 56,
+                                    color: AppColors.statusPending,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'BELUM DIVERIFIKASI',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.statusPending,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          child: CustomPaint(
-                            painter: _VectorQrCodePainter(seed: booking.code),
+                          const SizedBox(height: 14),
+                          const Text(
+                            'MENUNGGU VERIFIKASI',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.statusPending,
+                              letterSpacing: 0.8,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'PINDAI UNTUK CHECK-IN',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textLabel,
-                            letterSpacing: 0.8,
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Bukti pembayaran Anda sedang diverifikasi admin. QR Code untuk check-in akan otomatis tampil setelah status dikonfirmasi.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSubtitle,
+                              height: 1.4,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Tunjukkan kode QR ini kepada petugas venue saat tiba di lokasi',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSubtitle,
-                            height: 1.35,
+                        ] else if (booking.status == BookingStatus.cancelled) ...[
+                          Container(
+                            width: 140,
+                            height: 140,
+                            decoration: BoxDecoration(
+                              color: AppColors.statusCancelledBg,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: AppColors.statusCancelled.withValues(alpha: 0.3),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.cancel_outlined,
+                                size: 56,
+                                color: AppColors.statusCancelled,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 14),
+                          const Text(
+                            'PEMESANAN DIBATALKAN',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.statusCancelled,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Tiket ini tidak berlaku untuk check-in karena telah dibatalkan.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSubtitle,
+                              height: 1.4,
+                            ),
+                          ),
+                        ] else ...[
+                          // Confirmed: Vector QR Code representation
+                          Container(
+                            width: 140,
+                            height: 140,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.cardBorder,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: CustomPaint(
+                              painter: _VectorQrCodePainter(seed: booking.code),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'PINDAI UNTUK CHECK-IN',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textLabel,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Tunjukkan kode QR ini kepada petugas venue saat tiba di lokasi',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSubtitle,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 18),
                         Container(
                           width: double.infinity,

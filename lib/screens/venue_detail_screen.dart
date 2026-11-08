@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/field.dart';
+import '../services/favorite_service.dart';
 import '../theme/app_colors.dart';
 import 'slot_picker_screen.dart';
 
@@ -17,7 +18,6 @@ class VenueDetailScreen extends StatefulWidget {
 
 class _VenueDetailScreenState extends State<VenueDetailScreen> {
   late String _selectedCourt;
-  bool _isBookmarked = false;
 
   @override
   void initState() {
@@ -58,24 +58,28 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              _isBookmarked ? Icons.bookmark : Icons.bookmark_border_rounded,
-              color: _isBookmarked
-                  ? AppColors.primaryGreen
-                  : AppColors.textSubtitle,
-            ),
-            onPressed: () {
-              setState(() {
-                _isBookmarked = !_isBookmarked;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(_isBookmarked
-                      ? 'Disimpan ke daftar favorit'
-                      : 'Dihapus dari favorit'),
-                  duration: const Duration(seconds: 1),
+          ValueListenableBuilder<Set<String>>(
+            valueListenable: FavoriteService.instance.favoriteIdsNotifier,
+            builder: (context, favIds, _) {
+              final isFav = favIds.contains(field.id);
+              return IconButton(
+                icon: Icon(
+                  isFav ? Icons.bookmark : Icons.bookmark_border_rounded,
+                  color: isFav
+                      ? AppColors.primaryGreen
+                      : AppColors.textSubtitle,
                 ),
+                onPressed: () {
+                  FavoriteService.instance.toggleFavorite(field.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(isFav
+                          ? 'Dihapus dari daftar favorit'
+                          : 'Disimpan ke daftar favorit'),
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -490,25 +494,30 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
       width: double.infinity,
       color: const Color(0xFF161F28),
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          // Background stylized arena court graphic
-          Positioned.fill(
-            child: CustomPaint(
+          if (field.imageUrl != null)
+            Image.network(
+              field.imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => CustomPaint(
+                painter: _VenueArenaPainter(),
+              ),
+            )
+          else
+            CustomPaint(
               painter: _VenueArenaPainter(),
             ),
-          ),
           // Gradient scrim
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.1),
-                    Colors.black.withValues(alpha: 0.6),
-                  ],
-                ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.15),
+                  Colors.black.withValues(alpha: 0.7),
+                ],
               ),
             ),
           ),
