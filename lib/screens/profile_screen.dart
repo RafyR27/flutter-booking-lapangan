@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/refund_account.dart';
 import '../services/favorite_service.dart';
 import '../theme/app_colors.dart';
@@ -664,6 +665,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _openWhatsAppSupport() async {
+    final Uri waUri = Uri.parse(
+      'https://wa.me/6281289123456?text=Halo%20Admin%20Apex%20Sport%20Karawang,%20saya%20butuh%20bantuan%20terkait%20layanan%20booking%20lapangan.',
+    );
+    try {
+      if (await canLaunchUrl(waUri)) {
+        await launchUrl(waUri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(waUri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tidak dapat membuka WhatsApp: $e'),
+            backgroundColor: AppColors.statusCancelled,
+          ),
+        );
+      }
+    }
+  }
+
   void _showPolicyDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -1035,13 +1058,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const Divider(color: AppColors.dividerColor, height: 1),
                     _buildMenuItem(
-                      icon: Icons.help_outline_rounded,
+                      icon: Icons.chat_outlined,
                       title: 'Bantuan & Layanan Pelanggan',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Hubungi admin WhatsApp: +62 812-8912-3456')),
-                        );
-                      },
+                      trailingBadge: 'WhatsApp',
+                      onTap: _openWhatsAppSupport,
                     ),
                   ],
                 ),

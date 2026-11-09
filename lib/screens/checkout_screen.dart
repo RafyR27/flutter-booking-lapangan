@@ -30,7 +30,8 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  String _selectedPaymentMethod = 'BCA';
+  String _paymentCategory = 'BANK'; // 'BANK' or 'QRIS'
+  String _selectedBankCode = 'BCA'; // 'BCA' or 'Mandiri'
   String? _uploadedReceiptName;
   File? _receiptImageFile;
   final ImagePicker _picker = ImagePicker();
@@ -232,9 +233,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       userWhatsApp: _userWhatsApp,
       userEmail: _userEmail,
       totalPrice: widget.totalPrice,
-      paymentMethod: _selectedPaymentMethod == 'QRIS'
+      paymentMethod: _paymentCategory == 'QRIS'
           ? 'QRIS Dinamis'
-          : 'Transfer Bank $_selectedPaymentMethod',
+          : 'Transfer Bank $_selectedBankCode',
       status: BookingStatus.pendingVerification,
       createdAt: DateTime.now(),
       paymentProofName: _uploadedReceiptName,
@@ -421,117 +422,95 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(height: 10),
             Row(
               children: [
-                _buildPaymentOption('BCA', 'Bank BCA'),
-                const SizedBox(width: 8),
-                _buildPaymentOption('Mandiri', 'Bank Mandiri'),
-                const SizedBox(width: 8),
-                _buildPaymentOption('QRIS', 'QRIS'),
+                _buildPaymentCategoryOption(
+                  id: 'BANK',
+                  title: 'Transfer Bank',
+                  icon: Icons.account_balance_outlined,
+                ),
+                const SizedBox(width: 10),
+                _buildPaymentCategoryOption(
+                  id: 'QRIS',
+                  title: 'QRIS',
+                  icon: Icons.qr_code_2_rounded,
+                ),
               ],
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
-            // Rekening Tujuan
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSoft,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.cardBorder),
+            // Rincian Akun Tujuan Pembayaran
+            if (_paymentCategory == 'BANK') ...[
+              const Text(
+                'REKENING TUJUAN TRANSFER RESMI',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textLabel,
+                  letterSpacing: 0.6,
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _selectedPaymentMethod == 'QRIS'
-                        ? 'QRIS Kemenpora Karawang'
-                        : 'Rekening Transfer Resmi ($_selectedPaymentMethod)',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textDark,
+              const SizedBox(height: 8),
+
+              // Rekening 1: BCA (Nomor rekening dulu, lalu notes Bank BCA di sampingnya)
+              _buildBankCard(
+                bankCode: 'BCA',
+                accountNumber: '8940 1204 8819',
+                accountRaw: '894012048819',
+                bankName: 'Bank BCA',
+                noteColor: AppColors.primaryGreen,
+                noteBgColor: AppColors.primaryGreenLight,
+                accountHolder: 'PT Apex Solusi Olahraga',
+              ),
+
+              const SizedBox(height: 10),
+
+              // Rekening 2: Mandiri (Nomor rekening dulu, lalu notes Bank Mandiri di sampingnya)
+              _buildBankCard(
+                bankCode: 'Mandiri',
+                accountNumber: '173 00 9821 4410',
+                accountRaw: '1730098214410',
+                bankName: 'Bank Mandiri',
+                noteColor: const Color(0xFF2563EB),
+                noteBgColor: const Color(0xFFEFF6FF),
+                accountHolder: 'PT Apex Solusi Olahraga',
+              ),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      height: 130,
+                      width: 130,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.cardBorder),
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.qr_code_2_rounded, size: 68, color: AppColors.textDark),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (_selectedPaymentMethod != 'QRIS') ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _selectedPaymentMethod == 'BCA'
-                              ? '8940 1204 8819'
-                              : '173 00 9821 4410',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.0,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () => _copyToClipboard(
-                            _selectedPaymentMethod == 'BCA'
-                                ? '894012048819'
-                                : '1730098214410',
-                            'Nomor Rekening',
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AppColors.cardBorder),
-                            ),
-                            child: const Text(
-                              'Salin Rekening',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primaryGreen,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 12),
+                    const Text(
+                      'QRIS Standar Nasional (NMID: ID102003891)',
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.textDark),
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Atas Nama: PT Apex Solusi Olahraga',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSubtitle,
-                      ),
-                    ),
-                  ] else ...[
-                    Container(
-                      height: 120,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.cardBorder),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.qr_code_2_rounded, size: 48, color: AppColors.textDark),
-                            SizedBox(height: 4),
-                            Text(
-                              'Pindai QRIS via BCA / GoPay / OVO / Dana',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textSubtitle,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      'Pindai QRIS via m-Banking (BCA, Mandiri, BRI, BNI) atau E-Wallet (GoPay, OVO, DANA, ShopeePay)',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11.5, color: AppColors.textSubtitle, height: 1.4),
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
+            ],
 
             const SizedBox(height: 24),
 
@@ -775,36 +754,146 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildPaymentOption(String id, String label) {
-    final isSelected = _selectedPaymentMethod == id;
+  Widget _buildPaymentCategoryOption({
+    required String id,
+    required String title,
+    required IconData icon,
+  }) {
+    final isSelected = _paymentCategory == id;
     return Expanded(
       child: InkWell(
         onTap: () {
           setState(() {
-            _selectedPaymentMethod = id;
+            _paymentCategory = id;
           });
         },
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.primaryGreenLight : AppColors.surfaceSoft,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? AppColors.primaryGreen : AppColors.cardBorder,
               width: isSelected ? 1.5 : 1.0,
             ),
           ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: isSelected ? AppColors.primaryGreen : AppColors.textDark,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected ? AppColors.primaryGreen : AppColors.textSubtitle,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? AppColors.primaryGreen : AppColors.textDark,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBankCard({
+    required String bankCode,
+    required String accountNumber,
+    required String accountRaw,
+    required String bankName,
+    required Color noteColor,
+    required Color noteBgColor,
+    required String accountHolder,
+  }) {
+    final isSelected = _selectedBankCode == bankCode;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedBankCode = bankCode;
+        });
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryGreenLight.withValues(alpha: 0.4) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGreen : AppColors.cardBorder,
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // 1. Nomor Rekening dulu
+                Text(
+                  accountNumber,
+                  style: const TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // 2. Notes nama bank di sampingnya
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: noteBgColor,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: noteColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    bankName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: noteColor,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                // Tombol Salin
+                InkWell(
+                  onTap: () => _copyToClipboard(accountRaw, 'Nomor Rekening $bankName'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: const Text(
+                      'Salin',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Atas Nama: $accountHolder',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSubtitle,
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
