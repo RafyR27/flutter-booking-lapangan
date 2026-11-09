@@ -4,6 +4,11 @@ import '../theme/app_colors.dart';
 import '../widgets/category_chip.dart';
 import '../widgets/custom_search_bar.dart';
 import '../widgets/field_card.dart';
+import 'favorites_screen.dart';
+import 'history_screen.dart';
+import 'notifications_screen.dart';
+import 'profile_screen.dart';
+import 'venue_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,51 +19,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-
+  int? _expandedNavIndex = 0;
   final String _userName = 'Rafy Ramadhan';
+  String _searchQuery = '';
 
-  final List<Field> _fields = const [
-    Field(
-      id: 'f1',
-      name: 'Lapangan Futsal A',
-      sportType: 'Futsal',
-      location: 'Mall XP, Karawang',
-      pricePerHour: 150000,
-      rating: 4.8,
-    ),
-    Field(
-      id: 'f2',
-      name: 'Lapangan Badminton Indoor',
-      sportType: 'Badminton',
-      location: 'Jl. Sudirman, Karawang',
-      pricePerHour: 100000,
-      rating: 4.6,
-    ),
-    Field(
-      id: 'f3',
-      name: 'Lapangan Basket Kelapa Gading',
-      sportType: 'Basket',
-      location: 'Jl. Kelapa Gading, Karawang',
-      pricePerHour: 120000,
-      rating: 4.7,
-    ),
-    Field(
-      id: 'f4',
-      name: 'Lapangan Futsal B',
-      sportType: 'Futsal',
-      location: 'Taman Ria Indah, Karawang',
-      pricePerHour: 140000,
-      rating: 4.5,
-    ),
-    Field(
-      id: 'f5',
-      name: 'Lapangan Badminton Outdoor',
-      sportType: 'Badminton',
-      location: 'Pondok Indah, Karawang',
-      pricePerHour: 90000,
-      rating: 4.3,
-    ),
-  ];
+  final List<Field> _fields = Field.sampleList;
 
   final List<String> _categories = const [
     'Semua',
@@ -67,6 +32,14 @@ class _HomeScreenState extends State<HomeScreen> {
     'Basket',
     'Voli',
   ];
+
+  static const Map<String, IconData> _categoryIcons = {
+    'Semua': Icons.grid_view_rounded,
+    'Futsal': Icons.sports_soccer_outlined,
+    'Badminton': Icons.sports_tennis_outlined,
+    'Basket': Icons.sports_basketball_outlined,
+    'Voli': Icons.sports_volleyball_outlined,
+  };
 
   int _selectedCategory = 0;
 
@@ -83,18 +56,44 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Field> _filteredFields() {
-    if (_selectedCategory == 0) {
-      return _fields;
+    List<Field> list = _fields;
+    if (_selectedCategory != 0) {
+      list = list
+          .where((f) => f.sportType == _categories[_selectedCategory])
+          .toList();
     }
-    return _fields
-        .where((f) => f.sportType == _categories[_selectedCategory])
-        .toList();
+    if (_searchQuery.trim().isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      list = list
+          .where((f) =>
+              f.name.toLowerCase().contains(q) ||
+              f.location.toLowerCase().contains(q) ||
+              f.sportType.toLowerCase().contains(q) ||
+              f.floorType.toLowerCase().contains(q))
+          .toList();
+    }
+    return list;
   }
 
   void _onBottomNavTapped(int index) {
     setState(() {
-      _selectedIndex = index;
+      if (_expandedNavIndex == index) {
+        // Klik pada logo yang sudah aktif: mengecil lagi sesuai instruksi
+        _expandedNavIndex = null;
+      } else {
+        // Klik section lain: pindah halaman dan kontainer section baru membesar lonjong keluar batas
+        _selectedIndex = index;
+        _expandedNavIndex = index;
+      }
     });
+  }
+
+  void _openVenueDetail(Field field) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => VenueDetailScreen(field: field),
+      ),
+    );
   }
 
   @override
@@ -103,9 +102,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final List<Widget> pages = [
       _buildHomeContent(visibleFields),
-      const Center(child: Text('Halaman Booking')),
-      const Center(child: Text('Halaman Riwayat')),
-      const Center(child: Text('Halaman Profile')),
+      _buildBookingCatalogView(visibleFields),
+      const HistoryScreen(),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
@@ -115,36 +114,142 @@ class _HomeScreenState extends State<HomeScreen> {
           children: pages,
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onBottomNavTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: AppColors.textSubtitle,
-        backgroundColor: Colors.white,
-        elevation: 8,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            activeIcon: Icon(Icons.calendar_today),
-            label: 'Booking',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outlined),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
+      bottomNavigationBar: _buildCustomBottomNav(),
+    );
+  }
+
+  Widget _buildCustomBottomNav() {
+    return Container(
+      clipBehavior: Clip.none,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(
+          top: BorderSide(color: AppColors.cardBorder, width: 1.0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
           ),
         ],
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildNavItem(
+                index: 0,
+                label: 'Beranda',
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home,
+              ),
+              _buildNavItem(
+                index: 1,
+                label: 'Booking',
+                icon: Icons.calendar_today_outlined,
+                activeIcon: Icons.calendar_today,
+              ),
+              _buildNavItem(
+                index: 2,
+                label: 'Riwayat',
+                icon: Icons.history_outlined,
+                activeIcon: Icons.history,
+              ),
+              _buildNavItem(
+                index: 3,
+                label: 'Profile',
+                icon: Icons.person_outlined,
+                activeIcon: Icons.person,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required String label,
+    required IconData icon,
+    required IconData activeIcon,
+  }) {
+    final isSelected = _expandedNavIndex == index;
+
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _onBottomNavTapped(index),
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeInOutCubic,
+            transform:
+                Matrix4.translationValues(0, isSelected ? -10.0 : 0.0, 0),
+            width: isSelected ? 70 : 50,
+            height: isSelected ? 58 : 46,
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primaryGreen : Colors.transparent,
+              borderRadius: BorderRadius.circular(isSelected ? 29 : 23),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.38),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : const [],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _onBottomNavTapped(index),
+                borderRadius: BorderRadius.circular(isSelected ? 29 : 23),
+                splashColor: isSelected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : AppColors.primaryGreen.withValues(alpha: 0.18),
+                highlightColor: isSelected
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : AppColors.primaryGreen.withValues(alpha: 0.08),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedScale(
+                      scale: isSelected ? 1.18 : 1.0,
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutBack,
+                      child: Icon(
+                        isSelected ? activeIcon : icon,
+                        size: 21,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSubtitle,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: TextStyle(
+                        fontSize: isSelected ? 10.5 : 10.0,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSubtitle,
+                        fontFamily: 'Segoe UI',
+                      ),
+                      child: Text(label),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -190,24 +295,61 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppColors.tabBackground,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.notifications_none,
-                      color: AppColors.textDark,
-                      size: 20,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(
+                        Icons.bookmark_outline_rounded,
+                        color: AppColors.textDark,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const FavoritesScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryGreen,
+                      color: AppColors.tabBackground,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 20,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(
+                        Icons.notifications_none,
+                        color: AppColors.textDark,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  InkWell(
+                    onTap: () => _onBottomNavTapped(3), // Jump to Profile
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
@@ -217,11 +359,15 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 24),
 
           // Search bar
-                      CustomSearchBar(
-                        hintText: 'Cari lapangan olahraga...',
-                        onChanged: (value) {},
-                      ),
-          const SizedBox(height: 24),
+          CustomSearchBar(
+            hintText: 'Cari lapangan olahraga di Karawang...',
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+          ),
+          const SizedBox(height: 20),
 
           // Banner
           Container(
@@ -267,18 +413,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Container(
-                                width: 70,
-                                height: 70,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: const Icon(
-                                  Icons.local_activity,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                              ),
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.local_activity_outlined,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -302,10 +448,10 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: _categories.length,
               itemBuilder: (context, index) {
                 return Padding(
-                  padding:
-                      const EdgeInsets.only(right: 10, bottom: 4),
+                  padding: const EdgeInsets.only(right: 10, bottom: 4),
                   child: CategoryChip(
                     label: _categories[index],
+                    icon: _categoryIcons[_categories[index]],
                     isSelected: _selectedCategory == index,
                     onTap: () {
                       setState(() {
@@ -320,28 +466,129 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 24),
 
           // Daftar lapangan
-          const Text(
-            'Lapangan Populer',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textDark,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Lapangan Populer',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
+                ),
+              ),
+              Text(
+                '${fields.length} Venue',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSubtitle,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          ...fields.map(
-            (field) => FieldCard(
-              field: field,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Detail ${field.name}'),
+          if (fields.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              alignment: Alignment.center,
+              child: const Text(
+                'Tidak ada lapangan yang sesuai dengan pencarian.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSubtitle),
+              ),
+            )
+          else
+            ...fields.map(
+              (field) => FieldCard(
+                field: field,
+                onTap: () => _openVenueDetail(field),
+              ),
+            ),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookingCatalogView(List<Field> fields) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Katalog & Booking Venue',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textDark,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Pilih lapangan berstandar kompetisi di Karawang',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.textSubtitle,
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Search bar
+          CustomSearchBar(
+            hintText: 'Cari nama venue atau jenis lantai...',
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Kategori chips
+          SizedBox(
+            height: 40,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: CategoryChip(
+                    label: _categories[index],
+                    icon: _categoryIcons[_categories[index]],
+                    isSelected: _selectedCategory == index,
+                    onTap: () {
+                      setState(() {
+                        _selectedCategory = index;
+                      });
+                    },
                   ),
                 );
               },
             ),
           ),
-          const SizedBox(height: 80),
+          const SizedBox(height: 20),
+
+          // Fields list
+          if (fields.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              alignment: Alignment.center,
+              child: const Text(
+                'Tidak ditemukan lapangan olahraga yang cocok.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSubtitle),
+              ),
+            )
+          else
+            ...fields.map(
+              (field) => FieldCard(
+                field: field,
+                onTap: () => _openVenueDetail(field),
+              ),
+            ),
+          const SizedBox(height: 40),
         ],
       ),
     );
