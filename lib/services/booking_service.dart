@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/booking.dart';
+import 'wallet_service.dart';
 
 class BookingService {
   BookingService._internal() {
@@ -122,6 +123,9 @@ class BookingService {
       penaltyAmount: penalty,
       refundAmount: refund,
     );
+
+    // Credit the 80% refund into the user's accumulative wallet
+    WalletService.instance.creditRefund(refund, target.code);
 
     bookingsNotifier.value = current;
     return true;

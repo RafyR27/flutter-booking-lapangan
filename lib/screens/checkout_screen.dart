@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/booking.dart';
 import '../models/field.dart';
 import '../services/booking_service.dart';
+import '../services/wallet_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/date_formatter.dart';
 import 'ticket_pass_screen.dart';
@@ -37,6 +38,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _agreedToTerms = true;
   bool _isSubmitting = false;
+  bool _useRefundWallet = true; // Enabled by default if user has balance
+
+  int get _walletAvailable => WalletService.instance.balance;
+  int get _walletDeduction => (_useRefundWallet && _walletAvailable > 0)
+      ? (_walletAvailable >= widget.totalPrice ? widget.totalPrice : _walletAvailable)
+      : 0;
+  int get _remainingPayable => widget.totalPrice - _walletDeduction;
+  bool get _isFullyCoveredByWallet => _useRefundWallet && _remainingPayable == 0;
 
   final String _userName = 'Rafy Ramadhan';
   final String _userWhatsApp = '081289123456';
@@ -192,10 +201,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _submitBooking() async {
-    if (_uploadedReceiptName == null) {
+    if (!_isFullyCoveredByWallet && _uploadedReceiptName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Harap unggah foto bukti pembayaran terlebih dahulu'),
+          content: Text('Harap unggah foto bukti transfer sisa tagihan terlebih dahulu'),
           backgroundColor: AppColors.statusCancelled,
         ),
       );
@@ -220,6 +229,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     await Future.delayed(const Duration(milliseconds: 600));
 
     final bookingCode = 'APX-${AppDateFormatter.formatCodeDate(widget.selectedDate)}-${(DateTime.now().millisecondsSinceEpoch % 9000 + 1000)}';
+
+    // Deduct wallet balance if applied
+    if (_walletDeduction > 0) {
+      WalletService.instance.deductBalance(_walletDeduction, bookingCode);
+    }
+
+    final String methodDisplay;
+    if (_isFullyCoveredByWallet) {
+      methodDisplay = 'Saldo Dompet Refund (Lunas)';
+    } else if (_walletDeduction > 0) {
+      methodDisplay = 'Split (Dompet & ${_paymentCategory == "QRIS" ? "QRIS" : "Bank $_selectedBankCode"})';
+    } else {
+      methodDisplay = _paymentCategory == 'QRIS'
+          ? 'QRIS Dinamis'
+          : 'Transfer Bank $_selectedBankCode';
+    }
+
     final newBooking = Booking(
       id: 'bk-${DateTime.now().millisecondsSinceEpoch}',
       code: bookingCode,
@@ -233,12 +259,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       userWhatsApp: _userWhatsApp,
       userEmail: _userEmail,
       totalPrice: widget.totalPrice,
-      paymentMethod: _paymentCategory == 'QRIS'
-          ? 'QRIS Dinamis'
-          : 'Transfer Bank $_selectedBankCode',
-      status: BookingStatus.pendingVerification,
+      paymentMethod: methodDisplay,
+      status: _isFullyCoveredByWallet ? BookingStatus.confirmed : BookingStatus.pendingVerification,
       createdAt: DateTime.now(),
-      paymentProofName: _uploadedReceiptName,
+      paymentProofName: _uploadedReceiptName ?? 'lunas_saldo_dompet.png',
     );
 
     BookingService.instance.addBooking(newBooking);
@@ -349,23 +373,141 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Total Tagihan',
+                        'Total Biaya Sewa',
                         style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSubtitle,
+                        ),
+                      ),
+                      Text(
+                        _formatRupiah(widget.totalPrice),
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_walletDeduction > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Potongan Saldo Dompet',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                        Text(
+                          '- ${_formatRupiah(_walletDeduction)}',
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  const Divider(color: AppColors.dividerColor, height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _walletDeduction > 0
+                            ? 'Sisa Tagihan Dibayar'
+                            : 'Total Tagihan',
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textDark,
                         ),
                       ),
                       Text(
-                        _formatRupiah(widget.totalPrice),
-                        style: const TextStyle(
+                        _formatRupiah(_remainingPayable),
+                        style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.primaryGreen,
+                          color: _remainingPayable == 0
+                              ? AppColors.primaryGreen
+                              : AppColors.primaryGreen,
                         ),
                       ),
                     ],
                   ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Opsi Pemotongan Saldo Dompet Refund
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: _walletAvailable > 0 ? Colors.white : AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: (_useRefundWallet && _walletAvailable > 0)
+                      ? AppColors.primaryGreen
+                      : AppColors.cardBorder,
+                  width: (_useRefundWallet && _walletAvailable > 0) ? 1.5 : 1.0,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: (_useRefundWallet && _walletAvailable > 0)
+                        ? AppColors.primaryGreen
+                        : AppColors.textSubtitle,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Gunakan Saldo Dompet Refund',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _walletAvailable > 0
+                              ? 'Saldo tersedia: ${_formatRupiah(_walletAvailable)}'
+                              : 'Tidak ada saldo refund tersisa (Rp 0)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: _walletAvailable > 0
+                                ? AppColors.primaryGreen
+                                : AppColors.textSubtitle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_walletAvailable > 0)
+                    Switch.adaptive(
+                      value: _useRefundWallet,
+                      activeTrackColor: AppColors.primaryGreen,
+                      onChanged: (val) {
+                        setState(() {
+                          _useRefundWallet = val;
+                        });
+                      },
+                    ),
                 ],
               ),
             ),
@@ -403,272 +545,325 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const SizedBox(height: 24),
 
-            // Pilihan Metode Pembayaran
-            const Text(
-              'METODE PEMBAYARAN',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textLabel,
-                letterSpacing: 0.6,
+            // Rincian Pembayaran
+            if (_isFullyCoveredByWallet) ...[
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.primaryGreen, width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle_outline_rounded,
+                      color: AppColors.primaryGreen,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Tagihan Lunas dari Saldo Dompet',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Total ${_formatRupiah(widget.totalPrice)} terpotong otomatis dari saldo refund Anda. Anda tidak perlu mentransfer bank atau mengunggah bukti struk.',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSubtitle,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                _buildPaymentCategoryOption(
-                  id: 'BANK',
-                  title: 'Transfer Bank',
-                  icon: Icons.account_balance_outlined,
-                ),
-                const SizedBox(width: 10),
-                _buildPaymentCategoryOption(
-                  id: 'QRIS',
-                  title: 'QRIS',
-                  icon: Icons.qr_code_2_rounded,
-                ),
-              ],
-            ),
+            ] else ...[
+              const SizedBox(height: 24),
 
-            const SizedBox(height: 16),
-
-            // Rincian Akun Tujuan Pembayaran
-            if (_paymentCategory == 'BANK') ...[
-              const Text(
-                'REKENING TUJUAN TRANSFER RESMI',
-                style: TextStyle(
+              // Pilihan Metode Pembayaran untuk Sisa Tagihan
+              Text(
+                _walletDeduction > 0
+                    ? 'METODE PEMBAYARAN SISA TAGIHAN (${_formatRupiah(_remainingPayable)})'
+                    : 'METODE PEMBAYARAN',
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textLabel,
                   letterSpacing: 0.6,
                 ),
               ),
-              const SizedBox(height: 8),
-
-              // Rekening 1: BCA (Nomor rekening dulu, lalu notes Bank BCA di sampingnya)
-              _buildBankCard(
-                bankCode: 'BCA',
-                accountNumber: '8940 1204 8819',
-                accountRaw: '894012048819',
-                bankName: 'Bank BCA',
-                noteColor: AppColors.primaryGreen,
-                noteBgColor: AppColors.surfaceSoft,
-                accountHolder: 'PT Apex Solusi Olahraga',
-              ),
-
               const SizedBox(height: 10),
-
-              // Rekening 2: Mandiri (Nomor rekening dulu, lalu notes Bank Mandiri di sampingnya)
-              _buildBankCard(
-                bankCode: 'Mandiri',
-                accountNumber: '173 00 9821 4410',
-                accountRaw: '1730098214410',
-                bankName: 'Bank Mandiri',
-                noteColor: const Color(0xFF2563EB),
-                noteBgColor: AppColors.surfaceSoft,
-                accountHolder: 'PT Apex Solusi Olahraga',
+              Row(
+                children: [
+                  _buildPaymentCategoryOption(
+                    id: 'BANK',
+                    title: 'Transfer Bank',
+                    icon: Icons.account_balance_outlined,
+                  ),
+                  const SizedBox(width: 10),
+                  _buildPaymentCategoryOption(
+                    id: 'QRIS',
+                    title: 'QRIS',
+                    icon: Icons.qr_code_2_rounded,
+                  ),
+                ],
               ),
-            ] else ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceSoft,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.cardBorder),
+
+              const SizedBox(height: 16),
+
+              // Rincian Akun Tujuan Pembayaran
+              if (_paymentCategory == 'BANK') ...[
+                const Text(
+                  'REKENING TUJUAN TRANSFER RESMI',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textLabel,
+                    letterSpacing: 0.6,
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      height: 130,
-                      width: 130,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.cardBorder),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.qr_code_2_rounded, size: 68, color: AppColors.textDark),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'QRIS Standar Nasional (NMID: ID102003891)',
-                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.textDark),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Pindai QRIS via m-Banking (BCA, Mandiri, BRI, BNI) atau E-Wallet (GoPay, OVO, DANA, ShopeePay)',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 11.5, color: AppColors.textSubtitle, height: 1.4),
-                    ),
-                  ],
+                const SizedBox(height: 8),
+
+                // Rekening 1: BCA (Nomor rekening dulu, lalu notes Bank BCA di sampingnya)
+                _buildBankCard(
+                  bankCode: 'BCA',
+                  accountNumber: '8940 1204 8819',
+                  accountRaw: '894012048819',
+                  bankName: 'Bank BCA',
+                  noteColor: AppColors.primaryGreen,
+                  noteBgColor: AppColors.surfaceSoft,
+                  accountHolder: 'PT Apex Solusi Olahraga',
                 ),
-              ),
-            ],
 
-            const SizedBox(height: 24),
+                const SizedBox(height: 10),
 
-            // Upload Bukti Pembayaran (Proposal Requirement)
-            const Text(
-              'UNGGAH BUKTI PEMBAYARAN',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textLabel,
-                letterSpacing: 0.6,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Format file: JPG, PNG maksimal 5 MB untuk diverifikasi admin',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSubtitle,
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            if (_uploadedReceiptName == null)
-              InkWell(
-                onTap: _showImageSourcePicker,
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  height: 120,
-                  width: double.infinity,
+                // Rekening 2: Mandiri (Nomor rekening dulu, lalu notes Bank Mandiri di sampingnya)
+                _buildBankCard(
+                  bankCode: 'Mandiri',
+                  accountNumber: '173 00 9821 4410',
+                  accountRaw: '1730098214410',
+                  bankName: 'Bank Mandiri',
+                  noteColor: const Color(0xFF2563EB),
+                  noteBgColor: AppColors.surfaceSoft,
+                  accountHolder: 'PT Apex Solusi Olahraga',
+                ),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceSoft,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: AppColors.cardBorder,
-                      style: BorderStyle.solid,
-                    ),
+                    border: Border.all(color: AppColors.cardBorder),
                   ),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(
-                            Icons.camera_alt_outlined,
-                            size: 26,
-                            color: AppColors.primaryGreen,
-                          ),
-                          SizedBox(width: 14),
-                          Icon(
-                            Icons.photo_library_outlined,
-                            size: 26,
-                            color: AppColors.primaryGreen,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Ambil Foto Kamera / Pilih dari Galeri',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textDark,
+                      Container(
+                        height: 130,
+                        width: 130,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.cardBorder),
                         ),
+                        child: const Center(
+                          child: Icon(Icons.qr_code_2_rounded, size: 68, color: AppColors.textDark),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'QRIS Standar Nasional (NMID: ID102003891)',
+                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.textDark),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Ketuk di sini untuk memilih foto struk transfer',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: AppColors.textSubtitle,
-                        ),
+                      Text(
+                        'Pindai QRIS untuk membayar sisa tagihan ${_formatRupiah(_remainingPayable)} via m-Banking atau E-Wallet',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 11.5, color: AppColors.textSubtitle, height: 1.4),
                       ),
                     ],
                   ),
                 ),
-              )
-            else
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.primaryGreen, width: 1.5),
-                ),
-                child: Row(
-                  children: [
-                    if (_receiptImageFile != null)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          _receiptImageFile!,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    else
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.receipt_long_rounded,
-                          color: AppColors.primaryGreen,
-                          size: 30,
-                        ),
-                      ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _uploadedReceiptName!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            'Siap diverifikasi admin web',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.primaryGreen,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          InkWell(
-                            onTap: _showImageSourcePicker,
-                            child: const Text(
-                              'Ganti Foto Bukti',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textDark,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSubtitle),
-                      onPressed: () {
-                        setState(() {
-                          _uploadedReceiptName = null;
-                          _receiptImageFile = null;
-                        });
-                      },
-                    ),
-                  ],
+              ],
+
+              const SizedBox(height: 24),
+
+              // Upload Bukti Pembayaran
+              Text(
+                _walletDeduction > 0
+                    ? 'UNGGAH BUKTI SISA TRANSFER (${_formatRupiah(_remainingPayable)})'
+                    : 'UNGGAH BUKTI PEMBAYARAN',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textLabel,
+                  letterSpacing: 0.6,
                 ),
               ),
+              const SizedBox(height: 6),
+              const Text(
+                'Format file: JPG, PNG maksimal 5 MB untuk diverifikasi admin',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSubtitle,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              if (_uploadedReceiptName == null)
+                InkWell(
+                  onTap: _showImageSourcePicker,
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    height: 120,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppColors.cardBorder,
+                        style: BorderStyle.solid,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.camera_alt_outlined,
+                              size: 26,
+                              color: AppColors.primaryGreen,
+                            ),
+                            SizedBox(width: 14),
+                            Icon(
+                              Icons.photo_library_outlined,
+                              size: 26,
+                              color: AppColors.primaryGreen,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Ambil Foto Kamera / Pilih dari Galeri',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Ketuk di sini untuk memilih foto bukti transfer ${_formatRupiah(_remainingPayable)}',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: AppColors.textSubtitle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.primaryGreen, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      if (_receiptImageFile != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            _receiptImageFile!,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.receipt_long_rounded,
+                            color: AppColors.primaryGreen,
+                            size: 30,
+                          ),
+                        ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _uploadedReceiptName!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Siap diverifikasi admin web',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primaryGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            InkWell(
+                              onTap: _showImageSourcePicker,
+                              child: const Text(
+                                'Ganti Foto Bukti',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textDark,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSubtitle),
+                        onPressed: () {
+                          setState(() {
+                            _uploadedReceiptName = null;
+                            _receiptImageFile = null;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+            ],
 
             const SizedBox(height: 20),
 
@@ -732,9 +927,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Kirim Bukti & Selesaikan Pemesanan',
-                        style: TextStyle(
+                    : Text(
+                        _isFullyCoveredByWallet
+                            ? 'Konfirmasi Booking dengan Saldo Dompet'
+                            : 'Kirim Bukti & Selesaikan Pemesanan',
+                        style: const TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
                         ),

@@ -6,6 +6,7 @@ import '../widgets/custom_search_bar.dart';
 import '../widgets/field_card.dart';
 import 'favorites_screen.dart';
 import 'history_screen.dart';
+import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'venue_detail_screen.dart';
 
@@ -284,10 +285,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 20,
                       ),
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Belum ada notifikasi baru'),
-                            duration: Duration(seconds: 1),
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationsScreen(),
                           ),
                         );
                       },
