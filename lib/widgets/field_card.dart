@@ -151,22 +151,12 @@ class FieldCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGreenLight,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${_formatRupiah(field.pricePerHour)}/jam',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryGreen,
-                          ),
+                      Text(
+                        '${_formatRupiah(field.pricePerHour)}/jam',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryGreen,
                         ),
                       ),
                     ],

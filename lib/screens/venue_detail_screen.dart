@@ -210,23 +210,13 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryGreenLight,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                field.sportType.toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primaryGreen,
-                                  letterSpacing: 0.5,
-                                ),
+                            Text(
+                              field.sportType.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primaryGreen,
+                                letterSpacing: 0.8,
                               ),
                             ),
                             const SizedBox(height: 8),

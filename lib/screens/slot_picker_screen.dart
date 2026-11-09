@@ -86,11 +86,6 @@ class _SlotPickerScreenState extends State<SlotPickerScreen> {
   }
 
   int _calculateSlotPrice(String slot) {
-    // Evening slots from 18:00 have +20.000 night lighting tariff
-    final startHour = int.tryParse(slot.substring(0, 2)) ?? 12;
-    if (startHour >= 18) {
-      return widget.field.pricePerHour + 20000;
-    }
     return widget.field.pricePerHour;
   }
 

@@ -105,36 +105,108 @@ class _HomeScreenState extends State<HomeScreen> {
           children: pages,
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onBottomNavTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: AppColors.textSubtitle,
-        backgroundColor: Colors.white,
-        elevation: 8,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            activeIcon: Icon(Icons.calendar_today),
-            label: 'Booking',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outlined),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
+      bottomNavigationBar: _buildCustomBottomNav(),
+    );
+  }
+
+  Widget _buildCustomBottomNav() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(
+          top: BorderSide(color: AppColors.cardBorder, width: 1.0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
           ),
         ],
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          height: 62,
+          child: Row(
+            children: [
+              _buildNavItem(
+                index: 0,
+                label: 'Beranda',
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home,
+              ),
+              _buildNavItem(
+                index: 1,
+                label: 'Booking',
+                icon: Icons.calendar_today_outlined,
+                activeIcon: Icons.calendar_today,
+              ),
+              _buildNavItem(
+                index: 2,
+                label: 'Riwayat',
+                icon: Icons.history_outlined,
+                activeIcon: Icons.history,
+              ),
+              _buildNavItem(
+                index: 3,
+                label: 'Profile',
+                icon: Icons.person_outlined,
+                activeIcon: Icons.person,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required String label,
+    required IconData icon,
+    required IconData activeIcon,
+  }) {
+    final isSelected = _selectedIndex == index;
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkResponse(
+          onTap: () => _onBottomNavTapped(index),
+          splashColor: AppColors.primaryGreen.withValues(alpha: 0.18),
+          highlightColor: AppColors.primaryGreen.withValues(alpha: 0.08),
+          radius: 36,
+          containedInkWell: true,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedScale(
+                scale: isSelected ? 1.26 : 1.0,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutBack,
+                child: Icon(
+                  isSelected ? activeIcon : icon,
+                  size: 21,
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : AppColors.textSubtitle,
+                ),
+              ),
+              const SizedBox(height: 4),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(
+                  fontSize: isSelected ? 11.5 : 11.0,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : AppColors.textSubtitle,
+                ),
+                child: Text(label),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

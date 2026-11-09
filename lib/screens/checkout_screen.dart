@@ -310,19 +310,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGreenLight,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          widget.field.sportType.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryGreen,
-                          ),
+                      Text(
+                        widget.field.sportType.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryGreen,
+                          letterSpacing: 0.5,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -458,7 +452,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 accountRaw: '894012048819',
                 bankName: 'Bank BCA',
                 noteColor: AppColors.primaryGreen,
-                noteBgColor: AppColors.primaryGreenLight,
+                noteBgColor: AppColors.surfaceSoft,
                 accountHolder: 'PT Apex Solusi Olahraga',
               ),
 
@@ -471,7 +465,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 accountRaw: '1730098214410',
                 bankName: 'Bank Mandiri',
                 noteColor: const Color(0xFF2563EB),
-                noteBgColor: const Color(0xFFEFF6FF),
+                noteBgColor: AppColors.surfaceSoft,
                 accountHolder: 'PT Apex Solusi Olahraga',
               ),
             ] else ...[
@@ -593,9 +587,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGreenLight,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.primaryGreen),
+                  border: Border.all(color: AppColors.primaryGreen, width: 1.5),
                 ),
                 child: Row(
                   children: [
@@ -771,11 +765,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primaryGreenLight : AppColors.surfaceSoft,
+            color: isSelected ? AppColors.primaryGreen : AppColors.surfaceSoft,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? AppColors.primaryGreen : AppColors.cardBorder,
-              width: isSelected ? 1.5 : 1.0,
+              width: 1.2,
             ),
           ),
           child: Row(
@@ -784,7 +778,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Icon(
                 icon,
                 size: 18,
-                color: isSelected ? AppColors.primaryGreen : AppColors.textSubtitle,
+                color: isSelected ? Colors.white : AppColors.textSubtitle,
               ),
               const SizedBox(width: 8),
               Text(
@@ -792,7 +786,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: isSelected ? AppColors.primaryGreen : AppColors.textDark,
+                  color: isSelected ? Colors.white : AppColors.textDark,
                 ),
               ),
             ],
@@ -822,7 +816,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryGreenLight.withValues(alpha: 0.4) : Colors.white,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primaryGreen : AppColors.cardBorder,

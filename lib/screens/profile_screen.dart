@@ -1127,22 +1127,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (trailingBadge != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.primaryGreenLight,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                trailingBadge,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryGreen,
-                ),
+            Text(
+              trailingBadge,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryGreen,
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
           ],
           const Icon(
             Icons.chevron_right_rounded,

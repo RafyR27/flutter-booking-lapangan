@@ -44,7 +44,7 @@ class Field {
       name: 'Apex Arena Futsal Karawang',
       sportType: 'Futsal',
       location: 'Telukjambe Timur, Karawang',
-      pricePerHour: 150000,
+      pricePerHour: 65000,
       rating: 4.8,
       imageUrl:
           'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80',
@@ -70,7 +70,7 @@ class Field {
       name: 'Gedung Badminton BWF Galuh',
       sportType: 'Badminton',
       location: 'Pusat Kota, Karawang',
-      pricePerHour: 90000,
+      pricePerHour: 50000,
       rating: 4.7,
       imageUrl:
           'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80',
@@ -95,7 +95,7 @@ class Field {
       name: 'Grand Court Basket Parquet',
       sportType: 'Basket',
       location: 'Klari, Karawang',
-      pricePerHour: 125000,
+      pricePerHour: 60000,
       rating: 4.6,
       imageUrl:
           'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=80',
@@ -120,7 +120,7 @@ class Field {
       name: 'Singaperbangsa Mini Soccer',
       sportType: 'Futsal',
       location: 'Telukjambe Barat, Karawang',
-      pricePerHour: 175000,
+      pricePerHour: 70000,
       rating: 4.9,
       imageUrl:
           'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=800&q=80',
@@ -145,7 +145,7 @@ class Field {
       name: 'Karawang Smash Voli Indoor',
       sportType: 'Voli',
       location: 'Cikampek, Karawang',
-      pricePerHour: 80000,
+      pricePerHour: 55000,
       rating: 4.5,
       imageUrl:
           'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?auto=format&fit=crop&w=800&q=80',
