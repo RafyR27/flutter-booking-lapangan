@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  int? _expandedNavIndex = 0;
   final String _userName = 'Rafy Ramadhan';
   String _searchQuery = '';
 
@@ -76,7 +77,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onBottomNavTapped(int index) {
     setState(() {
-      _selectedIndex = index;
+      if (_expandedNavIndex == index) {
+        // Klik pada logo yang sudah aktif: mengecil lagi sesuai instruksi
+        _expandedNavIndex = null;
+      } else {
+        // Klik section lain: pindah halaman dan kontainer section baru membesar lonjong keluar batas
+        _selectedIndex = index;
+        _expandedNavIndex = index;
+      }
     });
   }
 
@@ -112,6 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCustomBottomNav() {
     return Container(
+      clipBehavior: Clip.none,
       decoration: BoxDecoration(
         color: Colors.white,
         border: const Border(
@@ -119,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, -3),
           ),
@@ -127,8 +136,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: SafeArea(
         child: SizedBox(
-          height: 62,
+          height: 64,
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _buildNavItem(
                 index: 0,
@@ -167,45 +177,77 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
     required IconData activeIcon,
   }) {
-    final isSelected = _selectedIndex == index;
+    final isSelected = _expandedNavIndex == index;
 
     return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkResponse(
-          onTap: () => _onBottomNavTapped(index),
-          splashColor: AppColors.primaryGreen.withValues(alpha: 0.18),
-          highlightColor: AppColors.primaryGreen.withValues(alpha: 0.08),
-          radius: 36,
-          containedInkWell: true,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedScale(
-                scale: isSelected ? 1.26 : 1.0,
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOutBack,
-                child: Icon(
-                  isSelected ? activeIcon : icon,
-                  size: 21,
-                  color: isSelected
-                      ? AppColors.primaryGreen
-                      : AppColors.textSubtitle,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _onBottomNavTapped(index),
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeInOutCubic,
+            transform:
+                Matrix4.translationValues(0, isSelected ? -10.0 : 0.0, 0),
+            width: isSelected ? 70 : 50,
+            height: isSelected ? 58 : 46,
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primaryGreen : Colors.transparent,
+              borderRadius: BorderRadius.circular(isSelected ? 29 : 23),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.38),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : const [],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _onBottomNavTapped(index),
+                borderRadius: BorderRadius.circular(isSelected ? 29 : 23),
+                splashColor: isSelected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : AppColors.primaryGreen.withValues(alpha: 0.18),
+                highlightColor: isSelected
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : AppColors.primaryGreen.withValues(alpha: 0.08),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedScale(
+                      scale: isSelected ? 1.18 : 1.0,
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutBack,
+                      child: Icon(
+                        isSelected ? activeIcon : icon,
+                        size: 21,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSubtitle,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: TextStyle(
+                        fontSize: isSelected ? 10.5 : 10.0,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSubtitle,
+                        fontFamily: 'Segoe UI',
+                      ),
+                      child: Text(label),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 4),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  fontSize: isSelected ? 11.5 : 11.0,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                  color: isSelected
-                      ? AppColors.primaryGreen
-                      : AppColors.textSubtitle,
-                ),
-                child: Text(label),
-              ),
-            ],
+            ),
           ),
         ),
       ),
