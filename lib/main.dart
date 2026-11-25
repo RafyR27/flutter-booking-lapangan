@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/welcome_screen.dart';
 import 'theme/app_colors.dart';
 
 void main() {
@@ -26,9 +27,10 @@ class BookingLapanganApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => AuthScreen(
+        '/': (context) => const WelcomeScreen(),
+        '/auth': (context) => AuthScreen(
               onLoginSuccess: () =>
-                  Navigator.of(context).pushNamed('/home'),
+                  Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false),
             ),
         '/home': (context) => const HomeScreen(),
       },
